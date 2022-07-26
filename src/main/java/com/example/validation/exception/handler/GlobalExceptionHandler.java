@@ -3,7 +3,9 @@ package com.example.validation.exception.handler;
 import com.example.validation.exception.errorcode.CommonErrorCode;
 import com.example.validation.exception.errorcode.ErrorCode;
 import com.example.validation.exception.response.ErrorResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +20,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
+@RequiredArgsConstructor
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private final MessageSource messageSource;
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException e) {
@@ -41,6 +46,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                   HttpStatus status,
                                                                   WebRequest request) {
         log.warn("handleMethodArgumentNotValid", e);
+        ErrorCode errorCode = CommonErrorCode.INVALID_PARAMETER;
+        return handleExceptionInternal(errorCode, e);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleBindException(BindException e, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        log.warn("handleBindException", e);
         ErrorCode errorCode = CommonErrorCode.INVALID_PARAMETER;
         return handleExceptionInternal(errorCode, e);
     }
@@ -78,7 +90,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         List<ErrorResponse.ValidationError> validationErrors = e.getBindingResult()
                 .getFieldErrors()
-                .stream().map(ErrorResponse.ValidationError::of)
+                .stream().map(fieldError -> ErrorResponse.ValidationError.of(fieldError, messageSource))
                 .collect(Collectors.toList());
 
         return ErrorResponse.builder()

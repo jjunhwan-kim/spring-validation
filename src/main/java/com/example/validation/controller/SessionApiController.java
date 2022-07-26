@@ -1,14 +1,14 @@
 package com.example.validation.controller;
 
-import com.example.validation.controller.dto.SessionCreationDto;
+import com.example.validation.controller.dto.SessionCreationRequestDto;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
-import java.util.List;
-import java.util.Optional;
 
 @RestController
 public class SessionApiController {
@@ -19,33 +19,21 @@ public class SessionApiController {
     }
 
     @PostMapping("/sessions/create")
-    public String createSession(@Valid @RequestBody SessionCreationDto sessionCreationDto) {
+    public String createSession(@Valid @RequestBody SessionCreationRequestDto sessionCreationRequestDto, BindingResult bindingResult) throws BindException {
 
-        validateSessionName(sessionCreationDto.getSessionName());
-        validateSessionManagers(sessionCreationDto.getSessionManagers());
-        validateSessionOption(sessionCreationDto.getCodeEnabled(), sessionCreationDto.getBinaryEnabled(), sessionCreationDto.getDependencyEnabled());
+        validateSessionOption(sessionCreationRequestDto.getCodeEnabled(), sessionCreationRequestDto.getBinaryEnabled(), sessionCreationRequestDto.getDependencyEnabled(), bindingResult);
 
         return "ok";
     }
 
-    private void validateSessionName(String sessionName) {
-        if (sessionName.equals("test")) {
-            throw new IllegalArgumentException("Session name error");
-        }
-    }
 
-    private void validateSessionManagers(List<String> sessionManagers) {
-        Optional<String> admin = sessionManagers.stream()
-                .filter(sessionManager -> sessionManager.equals("admin"))
-                .findAny();
-        if (!admin.isPresent()) {
-            throw new IllegalArgumentException("Session manager error");
-        }
-    }
 
-    private void validateSessionOption(Boolean codeEnabled, Boolean binaryEnabled, Boolean dependencyEnabled) {
+    private void validateSessionOption(Boolean codeEnabled, Boolean binaryEnabled, Boolean dependencyEnabled, BindingResult bindingResult) throws BindException {
         if (!codeEnabled && !binaryEnabled && !dependencyEnabled) {
-            throw new IllegalArgumentException("Session option error");
+            bindingResult.rejectValue("codeEnabled", "Required");
+            bindingResult.rejectValue("binaryEnabled", "Required");
+            bindingResult.rejectValue("dependencyEnabled", "Required");
+            throw new BindException(bindingResult);
         }
     }
 }

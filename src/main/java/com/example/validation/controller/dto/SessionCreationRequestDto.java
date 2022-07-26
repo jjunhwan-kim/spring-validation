@@ -1,5 +1,6 @@
 package com.example.validation.controller.dto;
 
+import com.example.validation.controller.validation.SessionNameUnique;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
@@ -9,9 +10,10 @@ import javax.validation.constraints.Size;
 import java.util.List;
 
 @Data
-public class SessionCreationDto {
+public class SessionCreationRequestDto {
 
     @NotBlank
+    @SessionNameUnique
     private String sessionName;
 
     @NotNull
